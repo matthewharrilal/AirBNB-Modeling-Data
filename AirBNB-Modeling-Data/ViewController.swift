@@ -9,18 +9,20 @@
 import UIKit
 
 class ViewController: UIViewController {
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        let network1 = Network()
+        print(network1.networking())
     }
-
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-
-
+    
+    
 }
 
 struct Listing {
@@ -31,8 +33,7 @@ struct Listing {
     let city: String?
     let bathrooms: Double?
     let neighborhood: String?
-    init(firstName: String?,name:String?, pictureURL: String?, city:String?, bathrooms:Double?, neighborhood:String?) {
-        self.firstName = firstName
+    init(name:String?, pictureURL: String?, city:String?, bathrooms:Double?, neighborhood:String?) {
         self.name = name
         self.pictureURL = pictureURL
         self.city = city
@@ -42,9 +43,42 @@ struct Listing {
     }
 }
 extension Listing: Decodable {
-    
-    enum Keys: String, Decodable {
+    enum firstLayer: String, CodingKey {
+        case listing
+    }
+    enum additionalKeys: String, CodingKey {
+        case name
+        case pictureURL = "picture_url"
+        case city
+        case bathrooms
+        case neighborhood
         
+    }
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: firstLayer.self)
+        let nestedContainer = try container.nestedContainer(keyedBy: additionalKeys.self, forKey: .listing)
+        let name = try nestedContainer.decodeIfPresent(String.self, forKey: .name)
+        let pictureURL = try nestedContainer.decodeIfPresent(String.self, forKey: .pictureURL)
+        let city = try nestedContainer.decodeIfPresent(String.self, forKey: .city)
+        let bathrooms = try nestedContainer.decodeIfPresent(Double.self, forKey: .bathrooms)
+        let neighborhood = try nestedContainer.decodeIfPresent(String.self, forKey: .neighborhood)
+        self.init(name: name, pictureURL: pictureURL, city: city, bathrooms: bathrooms, neighborhood: neighborhood)
+    }
+}
+struct ListingLists: Decodable {
+    let search_results: [Listing]
+}
+class Network {
+    func networking() {
+        let session = URLSession.shared
+        var getRequest = URLRequest(url: URL(string: "https://api.airbnb.com/v2/search_results?key=915pw2pnf4h1aiguhph5gc5b2")!)
+        getRequest.httpMethod = "GET"
+        session.dataTask(with: getRequest) { (data, response, error) in
+            if let data = data {
+             let airBNB = try? JSONDecoder().decode(ListingLists.self, from: data)
+                print(airBNB)
+            }
+        }.resume()
         
     }
 }
