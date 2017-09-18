@@ -43,6 +43,9 @@ struct Listing {
     }
 }
 extension Listing: Decodable {
+    enum originalLayer: String, CodingKey {
+        case searchResults = "search_results"
+    }
     enum firstLayer: String, CodingKey {
         case listing
     }
@@ -55,19 +58,21 @@ extension Listing: Decodable {
         
     }
     init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: firstLayer.self)
-        let nestedContainer = try container.nestedContainer(keyedBy: additionalKeys.self, forKey: .listing)
-        let name = try nestedContainer.decodeIfPresent(String.self, forKey: .name)
-        let pictureURL = try nestedContainer.decodeIfPresent(String.self, forKey: .pictureURL)
-        let city = try nestedContainer.decodeIfPresent(String.self, forKey: .city)
-        let bathrooms = try nestedContainer.decodeIfPresent(Double.self, forKey: .bathrooms)
-        let neighborhood = try nestedContainer.decodeIfPresent(String.self, forKey: .neighborhood)
+        let container = try decoder.container(keyedBy: originalLayer.self)
+        var unkeyedNestedContainer = try container.nestedUnkeyedContainer(forKey: .searchResults)
+        var nestedContainer = try unkeyedNestedContainer.nestedContainer(keyedBy: firstLayer.self)
+        var nestedContainer1 = try nestedContainer.nestedContainer(keyedBy: additionalKeys.self, forKey: .listing)
+        let name = try nestedContainer1.decodeIfPresent(String.self, forKey: .name)
+        let pictureURL = try nestedContainer1.decodeIfPresent(String.self, forKey: .pictureURL)
+        let city = try nestedContainer1.decodeIfPresent(String.self, forKey: .city)
+        let bathrooms = try nestedContainer1.decodeIfPresent(Double.self, forKey: .bathrooms)
+        let neighborhood = try nestedContainer1.decodeIfPresent(String.self, forKey: .neighborhood)
         self.init(name: name, pictureURL: pictureURL, city: city, bathrooms: bathrooms, neighborhood: neighborhood)
     }
 }
-struct ListingLists: Decodable {
-    let search_results: [Listing]
-}
+//struct ListingLists: Decodable {
+//    let search_results: [Listing]
+//}
 class Network {
     func networking() {
         let session = URLSession.shared
@@ -75,7 +80,7 @@ class Network {
         getRequest.httpMethod = "GET"
         session.dataTask(with: getRequest) { (data, response, error) in
             if let data = data {
-             let airBNB = try? JSONDecoder().decode(ListingLists.self, from: data)
+             let airBNB = try? JSONDecoder().decode(Listing.self, from: data)
                 print(airBNB)
             }
         }.resume()
