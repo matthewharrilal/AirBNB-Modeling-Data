@@ -43,6 +43,7 @@ struct Listing {
     }
 }
 extension Listing: Decodable {
+    
     enum originalLayer: String, CodingKey {
         case searchResults = "search_results"
     }
@@ -62,11 +63,11 @@ extension Listing: Decodable {
         var unkeyedNestedContainer = try container.nestedUnkeyedContainer(forKey: .searchResults)
         var nestedContainer = try unkeyedNestedContainer.nestedContainer(keyedBy: firstLayer.self)
         var nestedContainer1 = try nestedContainer.nestedContainer(keyedBy: additionalKeys.self, forKey: .listing)
-        let name = try nestedContainer1.decodeIfPresent(String.self, forKey: .name)
-        let pictureURL = try nestedContainer1.decodeIfPresent(String.self, forKey: .pictureURL)
-        let city = try nestedContainer1.decodeIfPresent(String.self, forKey: .city)
-        let bathrooms = try nestedContainer1.decodeIfPresent(Double.self, forKey: .bathrooms)
-        let neighborhood = try nestedContainer1.decodeIfPresent(String.self, forKey: .neighborhood)
+        let name = try nestedContainer1.decodeIfPresent(String.self, forKey: .name) ?? "Sorry the name of this listing is not present"
+        let pictureURL = try nestedContainer1.decodeIfPresent(String.self, forKey: .pictureURL) ?? "Sorry the picture for this listing is not available"
+        let city = try nestedContainer1.decodeIfPresent(String.self, forKey: .city) ?? "Sorry the picture for this listing is not available"
+        let bathrooms = try nestedContainer1.decodeIfPresent(Double.self, forKey: .bathrooms) ?? Double("The number of bathrooms for this listing is not available")
+        let neighborhood = try nestedContainer1.decodeIfPresent(String.self, forKey: .neighborhood) ?? "The neighborhood for this listing is not available"
         self.init(name: name, pictureURL: pictureURL, city: city, bathrooms: bathrooms, neighborhood: neighborhood)
     }
 }
@@ -74,13 +75,14 @@ extension Listing: Decodable {
 //    let search_results: [Listing]
 //}
 class Network {
+    var objectCount = [String]()
     func networking() {
         let session = URLSession.shared
         var getRequest = URLRequest(url: URL(string: "https://api.airbnb.com/v2/search_results?key=915pw2pnf4h1aiguhph5gc5b2")!)
         getRequest.httpMethod = "GET"
         session.dataTask(with: getRequest) { (data, response, error) in
             if let data = data {
-             let airBNB = try? JSONDecoder().decode(Listing.self, from: data)
+              let airBNB = try? JSONDecoder().decode(Listing.self, from: data)
                 print(airBNB)
             }
         }.resume()
